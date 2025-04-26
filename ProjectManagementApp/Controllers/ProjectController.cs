@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using ProjectManagementApp.Helpers.Context;
+using ProjectManagementApp.Hubs;
 using ProjectManagementApp.Model.Entity;
 
 namespace ProjectManagementApp.Controllers
@@ -13,11 +15,13 @@ namespace ProjectManagementApp.Controllers
     {
         private readonly ProjectDbContext _dbcontext;
         private readonly ILogger<ProjectController> _logger;
+        private readonly IHubContext<ProjectHub> _hubContext;
 
-        public ProjectController(ProjectDbContext dbcontext, ILogger<ProjectController> logger)
+        public ProjectController(ProjectDbContext dbcontext, ILogger<ProjectController> logger, IHubContext<ProjectHub> hubContext)
         {
             _dbcontext = dbcontext;
             _logger = logger;
+            _hubContext = hubContext;
         }
 
         #region Project CRUD
@@ -56,6 +60,8 @@ namespace ProjectManagementApp.Controllers
 
                 _dbcontext.mstProjecttbl.Add(project);
                 await _dbcontext.SaveChangesAsync();
+
+                await _hubContext.Clients.All.SendAsync("ProjectSaved", project);
                 return new JsonResult(new { success = true, message = "Project saved successfully." });
             }
             catch (Exception ex)
@@ -111,6 +117,7 @@ namespace ProjectManagementApp.Controllers
 
                 _dbcontext.mstProjecttbl.Update(existingProject);
                 await _dbcontext.SaveChangesAsync();
+                await _hubContext.Clients.All.SendAsync("ProjectUpdated", existingProject);
                 return new JsonResult(new { success = true, message = "Project updated successfully." });
             }
             catch (Exception ex)
@@ -136,6 +143,7 @@ namespace ProjectManagementApp.Controllers
 
                 _dbcontext.mstProjecttbl.Update(existingProject);
                 await _dbcontext.SaveChangesAsync();
+                await _hubContext.Clients.All.SendAsync("ProjectDeleted", existingProject);
                 return new JsonResult(new { success = true, message = "Project deleted successfully." });
             }
             catch (Exception ex)

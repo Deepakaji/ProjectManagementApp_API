@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ProjectManagementApp.Helpers.Context;
 using System.Text;
+using ProjectManagementApp.Hubs;
 //using Microsoft.AspNetCore.Identity.EntityFrameworkCore; // Add this using directive
 //using Microsoft.Extensions.DependencyInjection; // Add this using directive
 
@@ -30,6 +31,7 @@ builder.Services.AddAuthentication(opt =>
     });
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -64,11 +66,18 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Use CORS
-app.UseCors("AllowAll");
+app.UseCors(x => x
+    .AllowAnyHeader()
+    .AllowAnyMethod()
+    .AllowCredentials()
+    .WithOrigins("http://localhost:4200"));
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Map your SignalR Hub
+app.MapHub<ProjectHub>("/projectHub");
 
 app.Run();
